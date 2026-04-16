@@ -1,0 +1,67 @@
+# render.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# MediverseVR Narration Pipeline — Render deployment configuration
+#
+# HOW TO DEPLOY
+# ─────────────
+# 1. Push this repo to GitHub (if not already)
+# 2. Go to https://render.com → New → Web Service
+# 3. Connect your GitHub repo
+# 4. Render will detect this file automatically
+# 5. Add your Firebase env vars in the Render dashboard under Environment
+#    (see .env.example for the variable names)
+# 6. Click Deploy
+#
+# IMPORTANT: ffmpeg is installed via buildCommand (apt-get).
+# BioMistral-7B is NOT run on Render — use --skip-narration flag and
+# pre-generate final_mapped.json locally, or integrate Modal.com later.
+#
+# Render plan recommendation:
+#   Standard ($25/mo, 2 GB RAM) — runs TTS + ffmpeg comfortably
+#   Starter ($7/mo, 512 MB RAM) — TTS may be tight; video composition fine
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  - type: web
+    name: mediversevr-pipeline
+    runtime: python
+    plan: standard   # 2 GB RAM — handles Coqui TTS + ffmpeg
+
+    buildCommand: |
+      apt-get update -qq && apt-get install -y -qq ffmpeg &&
+      pip install --upgrade pip &&
+      pip install -r requirements-server.txt &&
+      pip install -r requirements-tts.txt &&
+      python -m spacy download en_core_web_sm
+
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+
+    # Health check — Render uses this to know the service is up
+    healthCheckPath: /health
+
+    # Persistent disk to store job files between deploys
+    # Without this, jobs/ is wiped on every deploy
+    disk:
+      name: mediversevr-jobs
+      mountPath: /opt/render/project/src/jobs
+      sizeGB: 10
+
+    # Environment variables — values are set in the Render dashboard, NOT here
+    # This section only declares which variables the service needs
+    envVars:
+      - key: FIREBASE_PROJECT_ID
+        sync: false   # "sync: false" = must be set manually in dashboard
+
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false
+
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false   # paste full service account JSON string here
+
+      # Auto-set by Render:
+      - key: PORT
+        generateValue: false   # Render sets $PORT automatically
+
+      # Python env — keeps stdout unbuffered so logs appear in real time
+      - key: PYTHONUNBUFFERED
+        value: "1"

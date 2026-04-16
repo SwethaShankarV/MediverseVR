@@ -79,6 +79,14 @@ from fastapi import (
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+# Firebase uploader — optional; gracefully skipped when not configured
+try:
+    from firebase_uploader import firebase_configured, upload_job as _firebase_upload_job
+    _FIREBASE_AVAILABLE = True
+except ImportError:
+    _FIREBASE_AVAILABLE = False
+    def firebase_configured(): return False  # type: ignore[misc]
+
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
 HERE      = Path(__file__).parent.resolve()
@@ -184,6 +192,21 @@ def _run_pipeline(job_id: str, video_path: Path, events_path: Path) -> None:
                 message="Pipeline finished. Video is ready to download.",
                 output_file=str(output_mp4),
             )
+
+            # ── Upload to Firebase (non-blocking, non-fatal) ───────────────
+            if _FIREBASE_AVAILABLE and firebase_configured():
+                try:
+                    firebase_urls = _firebase_upload_job(job_id, jdir)
+                    _update_job(job_id, firebase_urls=firebase_urls)
+                    _update_job(job_id,
+                        message="Pipeline finished. Video ready to download and replay available on Firebase.")
+                    print(f"[server] Firebase upload complete for job {job_id}")
+                except Exception as fb_err:
+                    # Firebase failure should never fail the whole job
+                    print(f"[server] Firebase upload failed (non-fatal): {fb_err}")
+            else:
+                print("[server] Firebase not configured — skipping upload. "
+                      "Set env vars from .env.example to enable.")
         else:
             # Read the last 20 lines of the log for the error message
             try:
@@ -400,6 +423,40 @@ def delete_job(job_id: str):
         _jobs.pop(job_id, None)
 
     return {"message": f"Job '{job_id}' deleted."}
+
+
+@app.get("/replays")
+def list_replays():
+    """
+    List all available replays with their Firebase download URLs.
+
+    When Firebase is configured: queries Firestore for all replay documents.
+    When Firebase is not configured: falls back to returning locally finished jobs.
+
+    Unity's FirebaseReplayBrowser.cs calls this endpoint to populate
+    the in-headset replay browser.
+    """
+    if _FIREBASE_AVAILABLE and firebase_configured():
+        try:
+            import firebase_admin  # noqa: PLC0415
+            from firebase_admin import firestore  # noqa: PLC0415
+            from firebase_uploader import _init_firebase  # noqa: PLC0415
+            _init_firebase()
+            db     = firestore.client()
+            docs   = db.collection("replays").order_by(
+                "uploaded_at", direction=firestore.Query.DESCENDING
+            ).limit(50).get()
+            replays = [doc.to_dict() for doc in docs]
+            return {"source": "firebase", "total": len(replays), "replays": replays}
+        except Exception as exc:
+            # Fall through to local fallback
+            print(f"[server] Firestore query failed, falling back to local: {exc}")
+
+    # Local fallback — done jobs only
+    with _lock:
+        done = [j for j in _jobs.values() if j["status"] == "done"]
+    done.sort(key=lambda j: j.get("created_at", ""), reverse=True)
+    return {"source": "local", "total": len(done), "replays": done}
 
 
 @app.get("/logs/{job_id}", response_class=HTMLResponse)

@@ -1,0 +1,8 @@
+# Server dependencies (FastAPI + Firebase)
+# Install with: pip install -r requirements-server.txt
+
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+aiofiles>=23.2.1
+python-multipart>=0.0.9
+firebase-admin>=6.4.0
