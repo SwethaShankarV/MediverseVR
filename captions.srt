@@ -1,0 +1,15 @@
+1
+00:00:00,000 --> 00:00:05,562
+A longitudinal incision was made over the dorsal aspect of the first metatarsal.
+
+2
+00:00:19,920 --> 00:00:23,926
+The foot was degloved to expose the metatarsal head.
+
+3
+00:00:27,200 --> 00:00:32,530
+Two osteotomies were performed using a bone saw and an oscillating saw.
+
+4
+00:00:35,220 --> 00:00:39,644
+A drilling procedure was then performed on the metatarsal head.

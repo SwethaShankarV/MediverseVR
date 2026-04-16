@@ -1,0 +1,48 @@
+.DS_Store
+
+# Cursor / IDE
+.cursor/
+.claude/
+.vscode/
+.idea/
+
+# Python: virtualenv + caches
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+.tox/
+.nox/
+dist/
+build/
+*.egg-info/
+
+# Local secrets / env
+.env
+.env.*
+
+# Large model offload/cache (re-downloadable)
+offload/
+
+# Unity (generated / machine-specific)
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+UserSettings/
+
+# Unity addressables / asset bundles (generated)
+Assets/AddressableAssetsData/*/BuildLayout*.txt
+Assets/AddressableAssetsData/*/buildlog*.txt
+
+# JetBrains Rider plugin for Unity
+Assets/Plugins/Editor/JetBrains*

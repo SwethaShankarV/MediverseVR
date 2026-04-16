@@ -1,0 +1,4 @@
+# Local TTS (Coqui). Install with: pip install -r requirements-tts.txt
+# Match torchaudio to your torch build (e.g. torch 2.10.x -> torchaudio 2.10.x).
+coqui-tts[codec,languages]>=0.27.5,<0.28
+torchaudio>=2.10.0,<2.11

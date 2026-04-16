@@ -1,0 +1,190 @@
+{
+    "data": [
+        {
+            "timestamp": 26.939998626708986,
+            "tool": "Scalpel",
+            "target": "clinic_table_2 (1)",
+            "action": "Scalpel_incise"
+        },
+        {
+            "timestamp": 28.84000015258789,
+            "tool": "Scalpel",
+            "target": "clinic_table_2 (1)",
+            "action": "Scalpel_incise"
+        },
+        {
+            "timestamp": 29.799999237060548,
+            "tool": "Scalpel",
+            "target": "clinic_table_2 (1)",
+            "action": "Scalpel_incise"
+        },
+        {
+            "timestamp": 43.57999801635742,
+            "tool": "Scalpel",
+            "target": "floor",
+            "action": "Scalpel_incise"
+        },
+        {
+            "timestamp": 45.459999084472659,
+            "tool": "Scalpel",
+            "target": "footr",
+            "action": "Scalpel_incise"
+        },
+        {
+            "timestamp": 46.02000045776367,
+            "tool": "Scalpel",
+            "target": "metatrl1",
+            "action": "Scalpel_incise"
+        },
+        {
+            "timestamp": 46.619998931884769,
+            "tool": "Scalpel",
+            "target": "footr",
+            "action": "Scalpel_incise"
+        },
+        {
+            "timestamp": 50.05999755859375,
+            "tool": "Scalpel",
+            "target": "Surgical_table",
+            "action": "Scalpel_incise"
+        },
+        {
+            "timestamp": 54.7599983215332,
+            "tool": "BoneSaw",
+            "target": "footr",
+            "action": "BoneSaw_engage"
+        },
+        {
+            "timestamp": 55.05999755859375,
+            "tool": "BoneSaw",
+            "target": "metatrl1",
+            "action": "BoneSaw_withdraw"
+        },
+        {
+            "timestamp": 56.119998931884769,
+            "tool": "BoneSaw",
+            "target": "Surgical_table",
+            "action": "BoneSaw_engage"
+        },
+        {
+            "timestamp": 56.18000030517578,
+            "tool": "BoneSaw",
+            "target": "Surgical_table",
+            "action": "BoneSaw_withdraw"
+        },
+        {
+            "timestamp": 64.86000061035156,
+            "tool": "OscillatingSaw",
+            "target": "footr",
+            "action": "ChevronCut_engage"
+        },
+        {
+            "timestamp": 65.08000183105469,
+            "tool": "OscillatingSaw",
+            "target": "footr",
+            "action": "ChevronCut_withdraw"
+        },
+        {
+            "timestamp": 67.29999542236328,
+            "tool": "BoneSaw",
+            "target": "Surgical_table",
+            "action": "BoneSaw_engage"
+        },
+        {
+            "timestamp": 67.41999816894531,
+            "tool": "BoneSaw",
+            "target": "Surgical_table",
+            "action": "BoneSaw_withdraw"
+        },
+        {
+            "timestamp": 69.22000122070313,
+            "tool": "OscillatingSaw",
+            "target": "footr",
+            "action": "ChevronCut_engage"
+        },
+        {
+            "timestamp": 69.36000061035156,
+            "tool": "OscillatingSaw",
+            "target": "footr",
+            "action": "ChevronCut_withdraw"
+        },
+        {
+            "timestamp": 69.76000213623047,
+            "tool": "OscillatingSaw",
+            "target": "footr",
+            "action": "ChevronCut_engage"
+        },
+        {
+            "timestamp": 69.79999542236328,
+            "tool": "OscillatingSaw",
+            "target": "metatrl1_RemainingPiece",
+            "action": "ChevronCut_withdraw"
+        },
+        {
+            "timestamp": 70.5,
+            "tool": "OscillatingSaw",
+            "target": "footr",
+            "action": "ChevronCut_engage"
+        },
+        {
+            "timestamp": 70.65999603271485,
+            "tool": "OscillatingSaw",
+            "target": "footr",
+            "action": "ChevronCut_withdraw"
+        },
+        {
+            "timestamp": 71.22000122070313,
+            "tool": "OscillatingSaw",
+            "target": "footr",
+            "action": "ChevronCut_engage"
+        },
+        {
+            "timestamp": 71.26000213623047,
+            "tool": "OscillatingSaw",
+            "target": "metatrl1_RemainingPiece",
+            "action": "ChevronCut_withdraw"
+        },
+        {
+            "timestamp": 72.0199966430664,
+            "tool": "OscillatingSaw",
+            "target": "Surgical_table",
+            "action": "ChevronCut_engage"
+        },
+        {
+            "timestamp": 72.08000183105469,
+            "tool": "OscillatingSaw",
+            "target": "Surgical_table",
+            "action": "ChevronCut_withdraw"
+        },
+        {
+            "timestamp": 76.55999755859375,
+            "tool": "Drill",
+            "target": "metatrl1_RemainingPiece",
+            "action": "Drill_insert"
+        },
+        {
+            "timestamp": 77.05999755859375,
+            "tool": "Drill",
+            "target": "metatrl1_RemainingPiece",
+            "action": "Drill_insert"
+        },
+        {
+            "timestamp": 77.55999755859375,
+            "tool": "Drill",
+            "target": "metatrl1_RemainingPiece",
+            "action": "Drill_insert"
+        },
+        {
+            "timestamp": 81.27999877929688,
+            "tool": "Drill",
+            "target": "Surgical_table",
+            "action": "Drill_insert"
+        },
+        {
+            "timestamp": 81.33999633789063,
+            "tool": "Drill",
+            "target": "Surgical_table",
+            "action": "Drill_withdraw"
+        }
+    ]
+}

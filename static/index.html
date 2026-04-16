@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediverseVR — Narration Pipeline</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container { max-width: 760px; margin: 0 auto; }
+
+    /* ── Header ── */
+    header { text-align: center; margin-bottom: 2.5rem; }
+    header h1 { font-size: 1.8rem; font-weight: 700; color: #fff; }
+    header h1 span { color: #38bdf8; }
+    header p  { color: #94a3b8; margin-top: .4rem; font-size: .95rem; }
+
+    /* ── Cards ── */
+    .card {
+      background: #1e2130;
+      border: 1px solid #2d3347;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 1.2rem;
+    }
+
+    /* ── Form ── */
+    label { display: block; font-size: .9rem; color: #cbd5e1; margin-bottom: .3rem; }
+
+    .file-drop {
+      border: 2px dashed #334155;
+      border-radius: 8px;
+      padding: 1.4rem 1rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+    .file-drop:hover, .file-drop.active { border-color: #38bdf8; background: rgba(56,189,248,.05); }
+    .file-drop input[type=file] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .file-drop .icon  { font-size: 1.6rem; margin-bottom: .3rem; }
+    .file-drop .label { font-size: .85rem; color: #64748b; }
+    .file-drop .name  { font-size: .9rem; color: #38bdf8; margin-top: .3rem; font-weight: 600; }
+
+    .checkrow { display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; }
+    .checkrow input { accent-color: #38bdf8; width: 16px; height: 16px; cursor: pointer; }
+    .checkrow label { margin: 0; font-size: .88rem; cursor: pointer; }
+
+    button.primary {
+      width: 100%; padding: .8rem; border: none; border-radius: 8px;
+      background: #0ea5e9; color: #fff; font-size: 1rem; font-weight: 600;
+      cursor: pointer; transition: background .2s;
+    }
+    button.primary:hover:not(:disabled) { background: #0284c7; }
+    button.primary:disabled { background: #334155; color: #64748b; cursor: not-allowed; }
+
+    /* ── Status ── */
+    .status-row {
+      display: flex; align-items: center; gap: .7rem;
+      padding: .7rem 1rem; border-radius: 8px; font-size: .9rem;
+      margin-bottom: .8rem;
+    }
+    .status-row.queued  { background: #1c2a3a; border: 1px solid #2563eb; }
+    .status-row.running { background: #1c2a1c; border: 1px solid #16a34a; }
+    .status-row.done    { background: #172717; border: 1px solid #22c55e; }
+    .status-row.failed  { background: #2a1c1c; border: 1px solid #dc2626; }
+
+    .badge {
+      font-size: .75rem; font-weight: 700; padding: .2rem .55rem;
+      border-radius: 99px; text-transform: uppercase; letter-spacing: .05em;
+    }
+    .badge.queued  { background: #1d4ed8; color: #bfdbfe; }
+    .badge.running { background: #15803d; color: #bbf7d0; animation: pulse 1.5s ease-in-out infinite; }
+    .badge.done    { background: #166534; color: #bbf7d0; }
+    .badge.failed  { background: #991b1b; color: #fecaca; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+    .status-msg { color: #94a3b8; font-size: .85rem; }
+    .job-id     { font-family: monospace; font-size: .75rem; color: #475569; }
+
+    /* ── Progress bar ── */
+    .progress-wrap { background: #0f1117; border-radius: 99px; height: 6px; overflow: hidden; }
+    .progress-bar  {
+      height: 100%; border-radius: 99px; background: #0ea5e9;
+      transition: width .4s ease;
+      background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+    }
+    .progress-bar.indeterminate {
+      width: 40% !important;
+      animation: slide 1.2s linear infinite;
+    }
+    @keyframes slide {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(300%); }
+    }
+
+    /* ── Steps list ── */
+    .steps { list-style: none; margin: .8rem 0 0 0; }
+    .steps li {
+      display: flex; align-items: center; gap: .6rem;
+      padding: .35rem 0; font-size: .88rem; color: #64748b;
+      border-bottom: 1px solid #1e2130;
+    }
+    .steps li:last-child { border: none; }
+    .steps li.done   { color: #4ade80; }
+    .steps li.active { color: #38bdf8; font-weight: 600; }
+    .steps li.failed { color: #f87171; }
+
+    /* ── Download ── */
+    .download-btn {
+      display: flex; align-items: center; justify-content: center; gap: .5rem;
+      width: 100%; padding: .75rem; border-radius: 8px;
+      background: #16a34a; color: #fff; text-decoration: none;
+      font-size: 1rem; font-weight: 600; margin-top: 1rem;
+      transition: background .2s;
+    }
+    .download-btn:hover { background: #15803d; }
+
+    /* ── Jobs list ── */
+    .job-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .6rem .4rem; border-bottom: 1px solid #2d3347;
+      font-size: .85rem;
+    }
+    .job-row:last-child { border: none; }
+    .job-row .left  { display: flex; flex-direction: column; gap: .15rem; }
+    .job-row .right { display: flex; gap: .5rem; align-items: center; }
+    .icon-btn {
+      background: none; border: 1px solid #334155; border-radius: 6px;
+      color: #94a3b8; padding: .25rem .55rem; cursor: pointer; font-size: .8rem;
+      transition: all .2s;
+    }
+    .icon-btn:hover { border-color: #38bdf8; color: #38bdf8; }
+    .icon-btn.danger:hover { border-color: #f87171; color: #f87171; }
+
+    /* ── Log box ── */
+    .log-box {
+      background: #0a0c10; border: 1px solid #2d3347; border-radius: 8px;
+      padding: 1rem; font-family: monospace; font-size: .78rem;
+      color: #94a3b8; max-height: 260px; overflow-y: auto;
+      white-space: pre-wrap; word-break: break-all;
+      margin-top: .8rem; display: none;
+    }
+    .log-box.visible { display: block; }
+
+    /* ── Error box ── */
+    .error { color: #f87171; font-size: .88rem; margin-top: .6rem; }
+
+    hr { border: none; border-top: 1px solid #2d3347; margin: 1.5rem 0; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>Mediverse<span>VR</span> — Narration Pipeline</h1>
+    <p>Upload a VR surgery recording and events log to generate a narrated MP4.</p>
+  </header>
+
+  <!-- ── Upload form ── -->
+  <div class="card">
+    <h2>📤 Upload &amp; Process</h2>
+
+    <label>Surgery Video</label>
+    <div class="file-drop" id="videoDrop">
+      <input type="file" id="videoInput" accept="video/*" />
+      <div class="icon">🎬</div>
+      <div class="label">Click or drag a video file here (.mp4, .mov, .avi)</div>
+      <div class="name" id="videoName"></div>
+    </div>
+
+    <label>Events JSON</label>
+    <div class="file-drop" id="eventsDrop">
+      <input type="file" id="eventsInput" accept=".json" />
+      <div class="icon">📋</div>
+      <div class="label">Click or drag surgery_events.json here</div>
+      <div class="name" id="eventsName"></div>
+    </div>
+
+    <div class="checkrow">
+      <input type="checkbox" id="skipNarration" />
+      <label for="skipNarration">Skip Step 1 — use existing <code>final_mapped.json</code> (no GPU needed)</label>
+    </div>
+    <div class="checkrow" style="margin-bottom:1.2rem">
+      <input type="checkbox" id="skipTts" />
+      <label for="skipTts">Skip Step 2 — use existing WAV files (no TTS needed)</label>
+    </div>
+
+    <button class="primary" id="submitBtn" disabled>Start Pipeline</button>
+    <div class="error" id="uploadError"></div>
+  </div>
+
+  <!-- ── Active job status ── -->
+  <div class="card" id="statusCard" style="display:none">
+    <h2>⚙️ Current Job</h2>
+
+    <div class="status-row" id="statusRow">
+      <span class="badge" id="statusBadge">queued</span>
+      <div>
+        <div id="statusMsg" class="status-msg">Waiting…</div>
+        <div id="jobIdDisplay" class="job-id"></div>
+      </div>
+    </div>
+
+    <div class="progress-wrap">
+      <div class="progress-bar indeterminate" id="progressBar"></div>
+    </div>
+
+    <ul class="steps" id="stepsList">
+      <li id="s1">⬜ Step 1 — Narration generation (BioMistral)</li>
+      <li id="s2">⬜ Step 2 — Text-to-speech (Coqui TTS)</li>
+      <li id="s3">⬜ Step 3 — SRT subtitle generation</li>
+      <li id="s4">⬜ Step 4 — Video composition (ffmpeg)</li>
+    </ul>
+
+    <a class="download-btn" id="downloadBtn" href="#" style="display:none" download>
+      ⬇️  Download Narrated Video
+    </a>
+
+    <button class="icon-btn" id="viewLogBtn" style="margin-top:.8rem" onclick="toggleLog()">
+      Show log
+    </button>
+    <div class="log-box" id="logBox"></div>
+  </div>
+
+  <!-- ── All jobs ── -->
+  <div class="card">
+    <h2>📂 All Jobs</h2>
+    <div id="jobsList"><p style="color:#475569;font-size:.88rem">No jobs yet.</p></div>
+    <button class="icon-btn" style="margin-top:.8rem" onclick="loadJobs()">🔄 Refresh</button>
+  </div>
+
+</div>
+
+<script>
+// ── File drop zones ──────────────────────────────────────────────────────────
+function setupDrop(dropId, inputId, nameId) {
+  const drop  = document.getElementById(dropId);
+  const input = document.getElementById(inputId);
+  const name  = document.getElementById(nameId);
+  input.addEventListener("change", () => {
+    if (input.files[0]) name.textContent = input.files[0].name;
+    updateSubmitBtn();
+  });
+  ["dragenter","dragover"].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("active"); }));
+  ["dragleave","drop"].forEach(e  => drop.addEventListener(e,  ev => { ev.preventDefault(); drop.classList.remove("active"); }));
+  drop.addEventListener("drop", ev => {
+    input.files = ev.dataTransfer.files;
+    if (input.files[0]) name.textContent = input.files[0].name;
+    updateSubmitBtn();
+  });
+}
+setupDrop("videoDrop",  "videoInput",  "videoName");
+setupDrop("eventsDrop", "eventsInput", "eventsName");
+
+function updateSubmitBtn() {
+  const v = document.getElementById("videoInput").files[0];
+  const e = document.getElementById("eventsInput").files[0];
+  document.getElementById("submitBtn").disabled = !(v && e);
+}
+
+// ── Submit ───────────────────────────────────────────────────────────────────
+document.getElementById("submitBtn").addEventListener("click", async () => {
+  const video  = document.getElementById("videoInput").files[0];
+  const events = document.getElementById("eventsInput").files[0];
+  const skipN  = document.getElementById("skipNarration").checked;
+  const skipT  = document.getElementById("skipTts").checked;
+  const errEl  = document.getElementById("uploadError");
+  errEl.textContent = "";
+
+  const fd = new FormData();
+  fd.append("video",  video);
+  fd.append("events", events);
+  fd.append("skip_narration", skipN);
+  fd.append("skip_tts", skipT);
+
+  document.getElementById("submitBtn").disabled = true;
+  document.getElementById("submitBtn").textContent = "Uploading…";
+
+  try {
+    const res  = await fetch("/process", { method: "POST", body: fd });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Upload failed");
+    showStatusCard(data.job_id);
+    startPolling(data.job_id);
+    loadJobs();
+  } catch(e) {
+    errEl.textContent = "Error: " + e.message;
+    document.getElementById("submitBtn").disabled = false;
+    document.getElementById("submitBtn").textContent = "Start Pipeline";
+  }
+});
+
+// ── Status card ──────────────────────────────────────────────────────────────
+let pollInterval = null;
+
+function showStatusCard(jobId) {
+  document.getElementById("statusCard").style.display = "block";
+  document.getElementById("jobIdDisplay").textContent = "Job ID: " + jobId;
+  document.getElementById("downloadBtn").style.display = "none";
+  document.getElementById("logBox").classList.remove("visible");
+  document.getElementById("viewLogBtn").textContent = "Show log";
+  // Reset steps
+  ["s1","s2","s3","s4"].forEach(id => {
+    const el = document.getElementById(id);
+    el.className = "";
+    el.textContent = el.textContent.replace(/^[✅🔄❌⬜]\s?/, "⬜ ");
+  });
+}
+
+const STEP_LABELS = [
+  "Step 1 — Narration generation (BioMistral)",
+  "Step 2 — Text-to-speech (Coqui TTS)",
+  "Step 3 — SRT subtitle generation",
+  "Step 4 — Video composition (ffmpeg)",
+];
+
+function updateSteps(status, msg) {
+  // Infer which steps are done by parsing the log message naively
+  const lower = (msg || "").toLowerCase();
+  const stepDone = [
+    lower.includes("step 1") && (lower.includes("complete") || lower.includes("skip")),
+    lower.includes("step 2") && (lower.includes("complete") || lower.includes("skip")),
+    lower.includes("step 3") && (lower.includes("complete") || lower.includes("skip")),
+    lower.includes("step 4") && (lower.includes("complete") || lower.includes("skip")),
+  ];
+  // When done, mark all complete
+  if (status === "done") stepDone.fill(true);
+
+  for (let i = 0; i < 4; i++) {
+    const el = document.getElementById("s" + (i+1));
+    if (stepDone[i]) {
+      el.className = "done"; el.textContent = "✅ " + STEP_LABELS[i];
+    } else if (status === "running" && !stepDone.slice(i+1).some(Boolean)) {
+      el.className = "active"; el.textContent = "🔄 " + STEP_LABELS[i];
+    } else {
+      el.className = ""; el.textContent = "⬜ " + STEP_LABELS[i];
+    }
+  }
+  if (status === "failed") {
+    for (let i = 0; i < 4; i++) {
+      if (!stepDone[i]) {
+        const el = document.getElementById("s" + (i+1));
+        el.className = "failed"; el.textContent = "❌ " + STEP_LABELS[i];
+        break;
+      }
+    }
+  }
+}
+
+function updateStatusCard(job) {
+  const row   = document.getElementById("statusRow");
+  const badge = document.getElementById("statusBadge");
+  const msg   = document.getElementById("statusMsg");
+  const bar   = document.getElementById("progressBar");
+
+  row.className   = "status-row " + job.status;
+  badge.className = "badge " + job.status;
+  badge.textContent = job.status;
+  msg.textContent   = job.message || "";
+
+  if (job.status === "done") {
+    bar.style.width = "100%";
+    bar.classList.remove("indeterminate");
+    const dlBtn = document.getElementById("downloadBtn");
+    dlBtn.href = "/download/" + job.job_id;
+    dlBtn.style.display = "flex";
+    document.getElementById("submitBtn").textContent = "Start Pipeline";
+    document.getElementById("submitBtn").disabled = false;
+  } else if (job.status === "failed") {
+    bar.style.width = "100%";
+    bar.style.background = "#dc2626";
+    bar.classList.remove("indeterminate");
+    document.getElementById("submitBtn").textContent = "Start Pipeline";
+    document.getElementById("submitBtn").disabled = false;
+  }
+
+  updateSteps(job.status, job.message);
+}
+
+function startPolling(jobId) {
+  if (pollInterval) clearInterval(pollInterval);
+  const currentJobId = jobId;
+  pollInterval = setInterval(async () => {
+    try {
+      const res = await fetch("/status/" + currentJobId);
+      const job = await res.json();
+      updateStatusCard(job);
+      if (job.status === "done" || job.status === "failed") {
+        clearInterval(pollInterval);
+        loadJobs();
+        // Auto-refresh log if visible
+        if (document.getElementById("logBox").classList.contains("visible")) {
+          loadLog(currentJobId);
+        }
+      }
+    } catch(_) {}
+  }, 2000);  // poll every 2 seconds
+}
+
+// ── Log viewer ────────────────────────────────────────────────────────────────
+let logJobId = null;
+
+function toggleLog() {
+  const box = document.getElementById("logBox");
+  const btn = document.getElementById("viewLogBtn");
+  const jid = document.getElementById("jobIdDisplay").textContent.replace("Job ID: ", "").trim();
+  if (!jid) return;
+  if (box.classList.contains("visible")) {
+    box.classList.remove("visible");
+    btn.textContent = "Show log";
+  } else {
+    box.classList.add("visible");
+    btn.textContent = "Hide log";
+    logJobId = jid;
+    loadLog(jid);
+  }
+}
+
+async function loadLog(jobId) {
+  const box = document.getElementById("logBox");
+  try {
+    const res = await fetch("/logs/" + jobId);
+    const txt = await res.text();
+    // Strip HTML tags (the server returns <pre>…</pre>)
+    box.textContent = txt.replace(/<[^>]+>/g, "");
+    box.scrollTop   = box.scrollHeight;
+  } catch(_) { box.textContent = "(log not available yet)"; }
+}
+
+// ── Jobs list ─────────────────────────────────────────────────────────────────
+async function loadJobs() {
+  try {
+    const res  = await fetch("/jobs");
+    const data = await res.json();
+    const el   = document.getElementById("jobsList");
+    if (!data.jobs.length) {
+      el.innerHTML = '<p style="color:#475569;font-size:.88rem">No jobs yet.</p>';
+      return;
+    }
+    el.innerHTML = data.jobs.map(j => `
+      <div class="job-row">
+        <div class="left">
+          <span style="color:#e2e8f0">${j.video_filename || "unknown"}</span>
+          <span class="job-id">${j.job_id}</span>
+          <span style="color:#475569;font-size:.78rem">${j.created_at}</span>
+        </div>
+        <div class="right">
+          <span class="badge ${j.status}">${j.status}</span>
+          ${j.status === "done"
+            ? `<a class="icon-btn" href="/download/${j.job_id}" download>⬇ Download</a>`
+            : ""}
+          <button class="icon-btn" onclick="resumeJob('${j.job_id}')">👁 View</button>
+          <button class="icon-btn danger" onclick="deleteJob('${j.job_id}')">🗑 Delete</button>
+        </div>
+      </div>`
+    ).join("");
+  } catch(_) {}
+}
+
+function resumeJob(jobId) {
+  showStatusCard(jobId);
+  fetch("/status/" + jobId).then(r => r.json()).then(job => {
+    updateStatusCard(job);
+    if (job.status === "running") startPolling(jobId);
+  });
+}
+
+async function deleteJob(jobId) {
+  if (!confirm("Delete this job and all its files?")) return;
+  await fetch("/jobs/" + jobId, { method: "DELETE" });
+  loadJobs();
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadJobs();
+</script>
+</body>
+</html>
