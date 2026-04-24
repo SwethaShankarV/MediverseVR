@@ -1,0 +1,10 @@
+{
+    "data": [
+        {
+            "timestamp": 47.63999938964844,
+            "tool": "Scalpel",
+            "target": "clinic_table_2 (1)",
+            "action": "Scalpel_incise"
+        }
+    ]
+}

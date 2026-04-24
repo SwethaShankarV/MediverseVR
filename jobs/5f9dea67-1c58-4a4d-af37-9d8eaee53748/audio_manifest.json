@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-04-24T10:43:01.363807+00:00",
+  "provider": "coqui",
+  "input_json": "/Users/swethashankar/Documents/OPT/MediverseVR/jobs/5f9dea67-1c58-4a4d-af37-9d8eaee53748/final_mapped.json",
+  "input_normalization": "passthrough",
+  "expected_audio_clips": 3,
+  "audio_dir": "/Users/swethashankar/Documents/OPT/MediverseVR/jobs/5f9dea67-1c58-4a4d-af37-9d8eaee53748/audio_steps",
+  "batching": {
+    "mode": "sequential",
+    "note": "Local Coqui runs sequentially to limit RAM/CPU thrash; one clip per step."
+  },
+  "future_enhancements": [
+    "Optional medical pronunciation pass (custom lexicon / SSML / post-edit)",
+    "Optional upload step: sync audio_dir to object storage and add audio_url"
+  ],
+  "model_name": "tts_models/en/ljspeech/glow-tts",
+  "speaker": null,
+  "steps": [
+    {
+      "step_index": 0,
+      "step_id": "step_0000",
+      "text_field": "sentence",
+      "text": "The patient underwent a surgical procedure to treat a metatarsal condition.",
+      "content_hash": "e91b802e043b1f6898eb03b81600794a4d26d4e9fcc76018dc426ad962d52ce9",
+      "audio_path": "audio_steps/step_0000_e91b802e043b1f68.wav",
+      "reused_cached_audio": false,
+      "tts_settings": {
+        "provider": "coqui",
+        "model_name": "tts_models/en/ljspeech/glow-tts",
+        "speaker": "",
+        "gpu": false,
+        "split_sentences": false
+      },
+      "channels": 1,
+      "sample_rate": 22050,
+      "duration_seconds": 5.236825,
+      "mono": true,
+      "source_times": {
+        "start_time": 9.559999465942383,
+        "end_time": 14.279999732971191,
+        "timestamp": 9.559999465942383
+      }
+    },
+    {
+      "step_index": 1,
+      "step_id": "step_0001",
+      "text_field": "sentence",
+      "text": "A scalpel was used to make an incision on the skin of the foot, followed by multiple osteotomies on the first metatarsal using a bone saw and an oscillating saw.",
+      "content_hash": "35ed3bc622040fc291e56ac8b505ba07a885a7136a77f31c577f20a4fbcb00a2",
+      "audio_path": "audio_steps/step_0001_35ed3bc622040fc2.wav",
+      "reused_cached_audio": false,
+      "tts_settings": {
+        "provider": "coqui",
+        "model_name": "tts_models/en/ljspeech/glow-tts",
+        "speaker": "",
+        "gpu": false,
+        "split_sentences": false
+      },
+      "channels": 1,
+      "sample_rate": 22050,
+      "duration_seconds": 10.972154,
+      "mono": true,
+      "source_times": {
+        "start_time": 19.920000076293945,
+        "end_time": 20.53999900817871,
+        "timestamp": 19.920000076293945
+      }
+    },
+    {
+      "step_index": 2,
+      "step_id": "step_0002",
+      "text_field": "sentence",
+      "text": "A drilling procedure was then performed on the first metatarsal.",
+      "content_hash": "703e2ed66a735d5f63ca8afeb045796c437c72a295efd75a26bb309f1aac3134",
+      "audio_path": "audio_steps/step_0002_703e2ed66a735d5f.wav",
+      "reused_cached_audio": false,
+      "tts_settings": {
+        "provider": "coqui",
+        "model_name": "tts_models/en/ljspeech/glow-tts",
+        "speaker": "",
+        "gpu": false,
+        "split_sentences": false
+      },
+      "channels": 1,
+      "sample_rate": 22050,
+      "duration_seconds": 4.424127,
+      "mono": true,
+      "source_times": {
+        "start_time": 27.19999885559082,
+        "end_time": 29.85999870300293,
+        "timestamp": 27.19999885559082
+      }
+    }
+  ]
+}

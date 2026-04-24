@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-04-24T11:44:02.639048+00:00",
+  "provider": "coqui",
+  "input_json": "final_mapped_zh.json",
+  "input_normalization": "passthrough",
+  "expected_audio_clips": 3,
+  "audio_dir": "audio_steps_zh",
+  "language": "zh",
+  "batching": {
+    "mode": "sequential",
+    "note": "Local Coqui runs sequentially to limit RAM/CPU thrash; one clip per step."
+  },
+  "future_enhancements": [
+    "Optional medical pronunciation pass (custom lexicon / SSML / post-edit)",
+    "Optional upload step: sync audio_dir to object storage and add audio_url"
+  ],
+  "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+  "speaker": "Ana Florence",
+  "steps": [
+    {
+      "step_index": 0,
+      "step_id": "step_0000",
+      "text_field": "sentence",
+      "text": "病人接受了外科手术治疗,以治疗一种异质疾病。",
+      "content_hash": "88f2d07b9dc6a77ec1c6c39bb30ef34d2dba170940e5a7de7c4a70e2f2e61806",
+      "audio_path": "audio_steps_zh/step_0000_88f2d07b9dc6a77e.wav",
+      "reused_cached_audio": true,
+      "tts_settings": {
+        "provider": "coqui",
+        "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+        "speaker": "Ana Florence",
+        "language": "zh",
+        "gpu": false,
+        "split_sentences": false
+      },
+      "channels": 1,
+      "sample_rate": 24000,
+      "duration_seconds": 5.515333,
+      "mono": true,
+      "source_times": {
+        "start_time": 9.559999465942383,
+        "end_time": 14.279999732971191,
+        "timestamp": 9.559999465942383
+      }
+    },
+    {
+      "step_index": 1,
+      "step_id": "step_0001",
+      "text_field": "sentence",
+      "text": "使用手术刀对脚的皮肤进行切切开,然后用骨头锯和振动锯对第一个异形头部进行多次骨质瘤切开。",
+      "content_hash": "4db9e677c2c9cf6f2d7ca833eb879282da4d297c476733ca67ac6e7824a299e2",
+      "audio_path": "audio_steps_zh/step_0001_4db9e677c2c9cf6f.wav",
+      "reused_cached_audio": true,
+      "tts_settings": {
+        "provider": "coqui",
+        "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+        "speaker": "Ana Florence",
+        "language": "zh",
+        "gpu": false,
+        "split_sentences": false
+      },
+      "channels": 1,
+      "sample_rate": 24000,
+      "duration_seconds": 9.792667,
+      "mono": true,
+      "source_times": {
+        "start_time": 19.920000076293945,
+        "end_time": 20.53999900817871,
+        "timestamp": 19.920000076293945
+      }
+    },
+    {
+      "step_index": 2,
+      "step_id": "step_0002",
+      "text_field": "sentence",
+      "text": "然后,在第一个米塔尔萨进行了钻探程序。",
+      "content_hash": "dceac095693c31db3cae7b914f1e03ef5381ee6579f57192cfddc320ff587057",
+      "audio_path": "audio_steps_zh/step_0002_dceac095693c31db.wav",
+      "reused_cached_audio": true,
+      "tts_settings": {
+        "provider": "coqui",
+        "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+        "speaker": "Ana Florence",
+        "language": "zh",
+        "gpu": false,
+        "split_sentences": false
+      },
+      "channels": 1,
+      "sample_rate": 24000,
+      "duration_seconds": 5.568667,
+      "mono": true,
+      "source_times": {
+        "start_time": 27.19999885559082,
+        "end_time": 29.85999870300293,
+        "timestamp": 27.19999885559082
+      }
+    }
+  ]
+}

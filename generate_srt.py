@@ -24,14 +24,12 @@ Output
 ──────
   captions.srt  — standard subtitle file readable by VLC, ffmpeg, browsers, etc.
 
-SRT format (one block per narration step):
-  1
-  00:00:00,000 --> 00:00:05,561
-  A longitudinal incision was made over the dorsal aspect of the first metatarsal.
-
-  2
-  00:00:19,920 --> 00:00:23,926
-  The foot was degloved to expose the metatarsal head.
+Overlap prevention
+──────────────────
+If a TTS clip takes longer to speak than the real-time gap between surgical
+events, captions would visually overlap. This script automatically shifts
+later captions so no two ever appear simultaneously. Mirrors the same
+overlap prevention in compose_video.py so audio and captions stay in sync.
 """
 
 import argparse
@@ -65,6 +63,27 @@ def estimate_duration(text: str) -> float:
     return max(2.0, min(estimated, 15.0))
 
 
+def repack_to_prevent_overlap(entries: list) -> list:
+    """
+    If a caption is still displayed when the next one starts, push the next
+    caption (and all subsequent ones) back so no two captions ever overlap.
+
+    Mirrors the audio-overlap prevention in compose_video.py (GAP_MS=300)
+    so captions stay in sync with the repacked audio clips.
+    """
+    GAP_S = 3  # matches GAP_MS=300 in compose_video.py
+    for i in range(len(entries) - 1):
+        min_next_start = entries[i]["end"] + GAP_S
+        if entries[i + 1]["start"] < min_next_start:
+            original_start = entries[i + 1]["start"]
+            duration       = entries[i + 1]["end"] - entries[i + 1]["start"]
+            entries[i + 1]["start"] = min_next_start
+            entries[i + 1]["end"]   = min_next_start + duration
+            print(f"  ⚠  Caption {i+2} shifted from {original_start:.2f}s "
+                  f"to {min_next_start:.2f}s to avoid overlap with caption {i+1}")
+    return entries
+
+
 def build_srt_block(index: int, start_s: float, end_s: float, text: str) -> str:
     """Return one complete SRT block as a string (no trailing newline)."""
     return (
@@ -76,7 +95,7 @@ def build_srt_block(index: int, start_s: float, end_s: float, text: str) -> str:
 
 # ── Loaders ───────────────────────────────────────────────────────────────────
 
-def load_from_manifest(manifest_path: str) -> list[dict]:
+def load_from_manifest(manifest_path: str) -> list:
     """
     Parse audio_manifest.json and return a list of subtitle entries:
       [{"start": float, "end": float, "text": str}, ...]
@@ -84,6 +103,9 @@ def load_from_manifest(manifest_path: str) -> list[dict]:
     Uses source_times.timestamp as the start and
     (timestamp + duration_seconds) as the end — the most accurate option
     because it reflects exactly how long the TTS clip actually plays.
+
+    Applies overlap prevention so captions stay synced with the audio
+    composed by compose_video.py.
     """
     with open(manifest_path, "r", encoding="utf-8") as f:
         manifest = json.load(f)
@@ -111,10 +133,13 @@ def load_from_manifest(manifest_path: str) -> list[dict]:
 
         entries.append({"start": start, "end": end, "text": text})
 
+    # Prevent captions from overlapping — mirrors compose_video.py audio repack
+    entries = repack_to_prevent_overlap(entries)
+
     return entries
 
 
-def load_from_final_mapped(fallback_path: str) -> list[dict]:
+def load_from_final_mapped(fallback_path: str) -> list:
     """
     Parse final_mapped.json and return subtitle entries.
 
@@ -140,12 +165,15 @@ def load_from_final_mapped(fallback_path: str) -> list[dict]:
 
         entries.append({"start": start, "end": end, "text": text})
 
+    # Prevent captions from overlapping — mirrors compose_video.py audio repack
+    entries = repack_to_prevent_overlap(entries)
+
     return entries
 
 
 # ── Writer ────────────────────────────────────────────────────────────────────
 
-def write_srt(entries: list[dict], output_path: str) -> None:
+def write_srt(entries: list, output_path: str) -> None:
     """Write a list of subtitle entries to an SRT file."""
     blocks = []
     for i, entry in enumerate(entries, start=1):

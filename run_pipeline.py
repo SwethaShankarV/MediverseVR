@@ -175,6 +175,8 @@ def parse_args() -> argparse.Namespace:
         help="Volume multiplier for narration audio in the output video (default: 1.0).")
     vid_group.add_argument("--soft-subs", action="store_true",
         help="Attach captions as a soft subtitle track instead of burning them in.")
+    vid_group.add_argument("--no-original-audio", action="store_true", dest="no_original_audio",
+        help="Strip the original video audio. Output has AI narration only (no overlap).")
 
     return parser.parse_args()
 
@@ -356,6 +358,8 @@ def main() -> None:
             cmd4 += ["--output", args.output]
         if args.soft_subs:
             cmd4.append("--soft-subs")
+        if args.no_original_audio:
+            cmd4.append("--no-original-audio")
 
         ok = run_step(4, "Compose narrated video  (ffmpeg)", cmd4)
         results["video"] = ok

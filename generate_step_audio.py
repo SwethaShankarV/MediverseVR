@@ -7,6 +7,29 @@ collapses it to one segment per non-empty `content`, so the number of WAVs match
 number of spoken lines (not the number of boundary rows). By default (`strict` on), the
 run fails if any line is missing audio or any WAV file is missing on disk.
 
+Language support
+────────────────
+Pass --language <code> to generate non-English audio. When language is anything
+other than "en", the model automatically switches to XTTS v2 (multilingual) and
+passes the language code to the TTS engine. Supported language codes:
+  en  English (default, uses glow-tts for speed)
+  zh  Mandarin Chinese
+  hi  Hindi
+  es  Spanish
+  fr  French
+  de  German
+  ar  Arabic
+  ja  Japanese
+  ko  Korean
+  pt  Portuguese
+  ru  Russian
+  it  Italian
+  pl  Polish
+  tr  Turkish
+  nl  Dutch
+  cs  Czech
+  hu  Hungarian
+
 Defaults favor macOS-friendly English (Gruut phonemizer). Models using eSpeak (e.g. many
 VITS checkpoints) need espeak-ng on PATH: brew install espeak-ng
 
@@ -27,6 +50,20 @@ import sys
 import wave
 from datetime import datetime, timezone
 from pathlib import Path
+
+
+# ── Multilingual TTS configuration ───────────────────────────────────────────
+
+# XTTS v2 handles all non-English languages with good quality.
+# Uses a built-in speaker to avoid requiring a voice sample for cloning.
+MULTILINGUAL_MODEL  = "tts_models/multilingual/multi-dataset/xtts_v2"
+MULTILINGUAL_SPEAKER = "Ana Florence"  # neutral female voice bundled with XTTS v2
+
+# Supported language codes — must be in XTTS v2's language list
+SUPPORTED_LANGS = {
+    "en", "zh", "hi", "es", "fr", "de", "ar", "ja", "ko", "pt", "ru",
+    "it", "pl", "tr", "nl", "cs", "hu",
+}
 
 
 def _wav_stats(path: Path) -> dict:
@@ -137,6 +174,38 @@ def _load_tts(model_name: str, gpu: bool):
     return TTS(model_name=model_name, progress_bar=False, gpu=gpu)
 
 
+def _resolve_model_and_settings(
+    requested_model: str,
+    language: str,
+    requested_speaker: str | None,
+) -> tuple[str, str | None, dict]:
+    """
+    Given the user's requested model and language, return the effective
+    (model_name, speaker, tts_kwargs_extra) to use.
+
+    Logic:
+      - language == "en"   → keep whatever model the user asked for (glow-tts by default)
+      - language != "en"   → force XTTS v2 multilingual model with a built-in speaker,
+                             and pass language=XX to tts_to_file()
+    """
+    tts_kwargs_extra: dict = {}
+    if language and language != "en":
+        if language not in SUPPORTED_LANGS:
+            raise ValueError(
+                f"Language '{language}' not supported. Choose from: "
+                + ", ".join(sorted(SUPPORTED_LANGS))
+            )
+        # Override the model regardless of what the user passed, since
+        # non-English requires a multilingual model.
+        effective_model   = MULTILINGUAL_MODEL
+        effective_speaker = requested_speaker or MULTILINGUAL_SPEAKER
+        tts_kwargs_extra["language"] = language
+        return effective_model, effective_speaker, tts_kwargs_extra
+
+    # English — keep whatever the user requested
+    return requested_model, requested_speaker, tts_kwargs_extra
+
+
 def _validate_audio_manifest(
     manifest_steps: list[dict],
     expected_clips: int,
@@ -176,6 +245,7 @@ def generate(
     use_gpu: bool,
     force: bool,
     strict: bool,
+    language: str = "en",
 ) -> dict:
     with input_json.open(encoding="utf-8") as f:
         entries = json.load(f)
@@ -196,10 +266,21 @@ def generate(
 
     audio_dir.mkdir(parents=True, exist_ok=True)
 
+    # Resolve the effective model/speaker for the requested language
+    effective_model, effective_speaker, tts_kwargs_extra = _resolve_model_and_settings(
+        model_name, language, speaker
+    )
+
+    print(f"  Language: {language}")
+    print(f"  Model:    {effective_model}")
+    if effective_speaker:
+        print(f"  Speaker:  {effective_speaker}")
+
     hash_settings = {
         "provider": "coqui",
-        "model_name": model_name,
-        "speaker": speaker or "",
+        "model_name": effective_model,
+        "speaker": effective_speaker or "",
+        "language": language,
         "gpu": use_gpu,
         "split_sentences": False,
     }
@@ -272,15 +353,17 @@ def generate(
             continue
 
         if tts is None:
-            tts = _load_tts(model_name, gpu=use_gpu)
+            tts = _load_tts(effective_model, gpu=use_gpu)
 
         kwargs = {
             "text": text,
             "file_path": str(out_path),
             "split_sentences": False,
         }
-        if speaker:
-            kwargs["speaker"] = speaker
+        if effective_speaker:
+            kwargs["speaker"] = effective_speaker
+        # Pass language= to XTTS v2; English glow-tts ignores this and we don't set it
+        kwargs.update(tts_kwargs_extra)
 
         tts.tts_to_file(**kwargs)
         stats = _wav_stats(out_path)
@@ -314,6 +397,7 @@ def generate(
         "input_normalization": input_note,
         "expected_audio_clips": expected_clips,
         "audio_dir": str(audio_dir.as_posix()),
+        "language": language,
         "batching": {
             "mode": "sequential",
             "note": "Local Coqui runs sequentially to limit RAM/CPU thrash; one clip per step.",
@@ -322,8 +406,8 @@ def generate(
             "Optional medical pronunciation pass (custom lexicon / SSML / post-edit)",
             "Optional upload step: sync audio_dir to object storage and add audio_url",
         ],
-        "model_name": model_name,
-        "speaker": speaker,
+        "model_name": effective_model,
+        "speaker": effective_speaker,
         "steps": manifest_steps,
     }
 
@@ -364,12 +448,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--model",
         default=os.environ.get("COQUI_TTS_MODEL", "tts_models/en/ljspeech/glow-tts"),
-        help="Coqui model_name (default: glow-tts / env COQUI_TTS_MODEL)",
+        help="Coqui model_name (default: glow-tts / env COQUI_TTS_MODEL). "
+             "Overridden to XTTS v2 when --language is non-English.",
     )
     parser.add_argument(
         "--speaker",
         default=os.environ.get("COQUI_SPEAKER") or None,
         help="Multi-speaker id (default: env COQUI_SPEAKER)",
+    )
+    parser.add_argument(
+        "--language", "-l",
+        default="en",
+        choices=sorted(SUPPORTED_LANGS),
+        help="Language code for the TTS output (default: en). Non-English "
+             "auto-switches to XTTS v2 multilingual model.",
     )
     parser.add_argument(
         "--gpu",
@@ -405,6 +497,7 @@ def main(argv: list[str] | None = None) -> int:
             use_gpu=use_gpu,
             force=args.force,
             strict=not args.no_strict,
+            language=args.language,
         )
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)

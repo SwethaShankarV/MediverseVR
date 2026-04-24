@@ -92,6 +92,8 @@ public class NarrationPipelineClient : MonoBehaviour
     [SerializeField] private GameObject       progressPanel;
     [SerializeField] private Slider           progressSlider;
     [SerializeField] private TextMeshProUGUI  savePathLabel;
+    [Tooltip("Button that appears when the video is ready. Clicking it opens the MP4 in the default video player.")]
+    [SerializeField] private Button           openVideoButton;
 
     [Header("Python / Pipeline")]
     [Tooltip("The Python interpreter. Usually 'python3' on Mac, 'python' on Windows.")]
@@ -144,6 +146,13 @@ public class NarrationPipelineClient : MonoBehaviour
 
         if (savePathLabel != null)
             savePathLabel.gameObject.SetActive(false);
+
+        // Hide the Open Video button until a video is ready
+        if (openVideoButton != null)
+        {
+            openVideoButton.gameObject.SetActive(false);
+            openVideoButton.onClick.AddListener(OnOpenVideoClicked);
+        }
 
         SetStatus("Ready to generate narrated video.");
         SetProgress(0f);
@@ -372,7 +381,7 @@ public class NarrationPipelineClient : MonoBehaviour
 
         if (success)
         {
-            SetStatus("Done! Your narrated video has been saved.");
+            SetStatus("Done! Your narrated video is ready.");
             SetProgress(1.0f);
 
             if (savePathLabel != null)
@@ -380,6 +389,10 @@ public class NarrationPipelineClient : MonoBehaviour
                 savePathLabel.text = "Saved to:\n" + _outputVideoPath;
                 savePathLabel.gameObject.SetActive(true);
             }
+
+            // Show the Open Video button now that the file exists
+            if (openVideoButton != null)
+                openVideoButton.gameObject.SetActive(true);
 
             Debug.Log("[NarrationPipeline] Video saved to: " + _outputVideoPath);
         }
@@ -415,6 +428,31 @@ public class NarrationPipelineClient : MonoBehaviour
         // Return the configured path even if it doesn't exist
         // (the validation step will catch this and show a clear error)
         return videoPath;
+    }
+
+    // ── Open Video button callback ─────────────────────────────────────────────
+
+    public void OnOpenVideoClicked()
+    {
+        if (string.IsNullOrEmpty(_outputVideoPath) || !File.Exists(_outputVideoPath))
+        {
+            Debug.LogWarning("[NarrationPipeline] Open Video clicked but file not found: " + _outputVideoPath);
+            SetStatus("Video file not found:\n" + _outputVideoPath);
+            return;
+        }
+
+        Debug.Log("[NarrationPipeline] Opening video: " + _outputVideoPath);
+
+#if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
+        // macOS: use 'open' so it launches in the default player (e.g. VLC, QuickTime)
+        System.Diagnostics.Process.Start("open", "\"" + _outputVideoPath + "\"");
+#elif UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+        // Windows: explorer /select highlights the file in File Explorer
+        System.Diagnostics.Process.Start("explorer.exe", "/select,\"" + _outputVideoPath + "\"");
+#else
+        // Fallback: let the OS figure it out (Linux, etc.)
+        Application.OpenURL("file://" + _outputVideoPath);
+#endif
     }
 
     private void SetStatus(string msg)

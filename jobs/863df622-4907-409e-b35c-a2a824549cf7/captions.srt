@@ -1,0 +1,11 @@
+1
+00:00:09,560 --> 00:00:14,797
+The patient underwent a surgical procedure to treat a metatarsal condition.
+
+2
+00:00:19,920 --> 00:00:30,892
+A scalpel was used to make an incision on the skin of the foot, followed by multiple osteotomies on the first metatarsal using a bone saw and an oscillating saw.
+
+3
+00:00:33,892 --> 00:00:38,316
+A drilling procedure was then performed on the first metatarsal.

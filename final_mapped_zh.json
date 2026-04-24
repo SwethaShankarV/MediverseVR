@@ -1,0 +1,26 @@
+[
+  {
+    "start_time": 9.559999465942383,
+    "end_time": 14.279999732971191,
+    "timestamp": 9.559999465942383,
+    "sentence": "病人接受了外科手术治疗,以治疗一种异质疾病。",
+    "language": "zh",
+    "original_english": "The patient underwent a surgical procedure to treat a metatarsal condition."
+  },
+  {
+    "start_time": 19.920000076293945,
+    "end_time": 20.53999900817871,
+    "timestamp": 19.920000076293945,
+    "sentence": "使用手术刀对脚的皮肤进行切切开,然后用骨头锯和振动锯对第一个异形头部进行多次骨质瘤切开。",
+    "language": "zh",
+    "original_english": "A scalpel was used to make an incision on the skin of the foot, followed by multiple osteotomies on the first metatarsal using a bone saw and an oscillating saw."
+  },
+  {
+    "start_time": 27.19999885559082,
+    "end_time": 29.85999870300293,
+    "timestamp": 27.19999885559082,
+    "sentence": "然后,在第一个米塔尔萨进行了钻探程序。",
+    "language": "zh",
+    "original_english": "A drilling procedure was then performed on the first metatarsal."
+  }
+]
