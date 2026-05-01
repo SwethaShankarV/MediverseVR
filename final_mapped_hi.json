@@ -3,8 +3,8 @@
     "start_time": 9.559999465942383,
     "end_time": 14.279999732971191,
     "timestamp": 9.559999465942383,
-    "sentence": "患者接受了手术治疗跖骨病变。",
-    "language": "zh",
+    "sentence": "रोगी ने मेटाटार्सल स्थिति के उपचार के लिए शल्य चिकित्सा प्रक्रिया करवाई।",
+    "language": "hi",
     "original_english": "The patient underwent a surgical procedure to treat a metatarsal condition.",
     "translation_backend": "openai"
   },
@@ -12,8 +12,8 @@
     "start_time": 19.920000076293945,
     "end_time": 20.53999900817871,
     "timestamp": 19.920000076293945,
-    "sentence": "使用手术刀在足部皮肤上切开，随后对第一跖骨进行多次骨切割，使用骨锯和振动锯。",
-    "language": "zh",
+    "sentence": "पैर की त्वचा पर चीरा लगाने के लिए स्कैल्पेल का उपयोग किया गया, फिर पहले मेटाटार्सल पर बोन सॉ और ऑस्सीलेटिंग सॉ से ऑस्टियोटमी की गई।",
+    "language": "hi",
     "original_english": "A scalpel was used to make an incision on the skin of the foot, followed by multiple osteotomies on the first metatarsal using a bone saw and an oscillating saw.",
     "translation_backend": "openai"
   },
@@ -21,8 +21,8 @@
     "start_time": 27.19999885559082,
     "end_time": 29.85999870300293,
     "timestamp": 27.19999885559082,
-    "sentence": "随后对第一跖骨进行了钻孔手术。",
-    "language": "zh",
+    "sentence": "पहले मेटाटार्सल पर फिर एक ड्रिलिंग प्रक्रिया की गई।",
+    "language": "hi",
     "original_english": "A drilling procedure was then performed on the first metatarsal.",
     "translation_backend": "openai"
   }
