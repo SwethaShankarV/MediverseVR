@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-05-01T10:13:01.106966+00:00",
+  "provider": "coqui",
+  "input_json": "final_mapped_zh.json",
+  "input_normalization": "passthrough",
+  "expected_audio_clips": 3,
+  "audio_dir": "audio_steps_zh",
+  "language": "zh",
+  "batching": {
+    "mode": "sequential",
+    "note": "Local Coqui runs sequentially to limit RAM/CPU thrash; one clip per step."
+  },
+  "future_enhancements": [
+    "Optional medical pronunciation pass (custom lexicon / SSML / post-edit)",
+    "Optional upload step: sync audio_dir to object storage and add audio_url"
+  ],
+  "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+  "speaker": "Ana Florence",
+  "steps": [
+    {
+      "step_index": 0,
+      "step_id": "step_0000",
+      "text_field": "sentence",
+      "text": "患者接受了手术治疗跖骨病变。",
+      "content_hash": "d4a3dfa2b1b81781c5fd951844fb14d2928174ec79d442da3cac8f46785e4593",
+      "audio_path": "audio_steps_zh/step_0000_d4a3dfa2b1b81781.wav",
+      "reused_cached_audio": false,
+      "tts_settings": {
+        "provider": "coqui",
+        "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+        "speaker": "Ana Florence",
+        "language": "zh",
+        "gpu": false,
+        "split_sentences": false
+      },
+      "channels": 1,
+      "sample_rate": 24000,
+      "duration_seconds": 3.520667,
+      "mono": true,
+      "source_times": {
+        "start_time": 9.559999465942383,
+        "end_time": 14.279999732971191,
+        "timestamp": 9.559999465942383
+      }
+    },
+    {
+      "step_index": 1,
+      "step_id": "step_0001",
+      "text_field": "sentence",
+      "text": "使用手术刀在足部皮肤上切开后，使用骨锯和振动锯对第一跖骨进行了多次骨切开术。",
+      "content_hash": "e7ca2ab3c94fa968d3e4cf0cdbd710e1adb9ec6eff58253096ccdf0a52e29bb6",
+      "audio_path": "audio_steps_zh/step_0001_e7ca2ab3c94fa968.wav",
+      "reused_cached_audio": false,
+      "tts_settings": {
+        "provider": "coqui",
+        "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+        "speaker": "Ana Florence",
+        "language": "zh",
+        "gpu": false,
+        "split_sentences": false
+      },
+      "channels": 1,
+      "sample_rate": 24000,
+      "duration_seconds": 9.280667,
+      "mono": true,
+      "source_times": {
+        "start_time": 19.920000076293945,
+        "end_time": 20.53999900817871,
+        "timestamp": 19.920000076293945
+      }
+    },
+    {
+      "step_index": 2,
+      "step_id": "step_0002",
+      "text_field": "sentence",
+      "text": "随后对第一跖骨进行了钻孔手术。",
+      "content_hash": "8c28cc65e91a805957c6f31b081c938f21629fa5596b866f2c93dbe63b151bba",
+      "audio_path": "audio_steps_zh/step_0002_8c28cc65e91a8059.wav",
+      "reused_cached_audio": false,
+      "tts_settings": {
+        "provider": "coqui",
+        "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+        "speaker": "Ana Florence",
+        "language": "zh",
+        "gpu": false,
+        "split_sentences": false
+      },
+      "channels": 1,
+      "sample_rate": 24000,
+      "duration_seconds": 3.339333,
+      "mono": true,
+      "source_times": {
+        "start_time": 27.19999885559082,
+        "end_time": 29.85999870300293,
+        "timestamp": 27.19999885559082
+      }
+    }
+  ]
+}

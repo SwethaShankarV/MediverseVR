@@ -170,7 +170,34 @@ def load_audio_steps(manifest_path: str, base_dir: str) -> List[dict]:
             "text":     step.get("text", ""),
         })
 
+    # Overlap prevention: if a narration clip is still playing when the next
+    # is scheduled to start, push the next clip back so they play sequentially.
+    # This preserves the original timestamp as a MINIMUM start time but ensures
+    # clips never talk over each other. Common when TTS output is longer than
+    # the real-time gap between events.
+    GAP_MS = 300  # small breathing room between clips
+    for i in range(len(result)):
+        audio_dur_ms = int(_probe_duration_seconds(result[i]["path"]) * 1000)
+        earliest_next_start = result[i]["delay_ms"] + audio_dur_ms + GAP_MS
+        if i + 1 < len(result) and result[i + 1]["delay_ms"] < earliest_next_start:
+            original = result[i + 1]["delay_ms"]
+            result[i + 1]["delay_ms"] = earliest_next_start
+            print(f"  ⚠  Clip {i+1} delayed from {original}ms to {earliest_next_start}ms "                  f"to avoid overlap with clip {i} (duration {audio_dur_ms}ms)")
+
     return result
+
+
+def _probe_duration_seconds(audio_path: str) -> float:
+    """Return duration of an audio file in seconds via ffprobe."""
+    result = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "default=noprint_wrappers=1:nokey=1", audio_path],
+        capture_output=True, text=True,
+    )
+    try:
+        return float(result.stdout.strip())
+    except (ValueError, AttributeError):
+        return 0.0
 
 
 # ── SRT parser (for drawtext fallback) ───────────────────────────────────────
@@ -259,14 +286,15 @@ def build_drawtext_filters(captions: List[dict]) -> str:
 # ── ffmpeg command builder ────────────────────────────────────────────────────
 
 def build_ffmpeg_command(
-    video_path:       str,
-    audio_steps:      List[dict],
-    srt_path:         Optional[str],
-    output_path:      str,
-    narration_volume: float,
-    soft_subs:        bool,
-    has_video_audio:  bool,
-    caption_mode:     str,          # "libass" | "drawtext" | "soft" | "none"
+    video_path:        str,
+    audio_steps:       List[dict],
+    srt_path:          Optional[str],
+    output_path:       str,
+    narration_volume:  float,
+    soft_subs:         bool,
+    has_video_audio:   bool,
+    caption_mode:      str,          # "libass" | "drawtext" | "soft" | "none"
+    no_original_audio: bool = False, # strip original video audio, narration only
 ) -> List[str]:
     """
     Construct the full ffmpeg command as a list of strings.
@@ -323,7 +351,10 @@ def build_ffmpeg_command(
         delayed_labels.append(f"[{label}]")
 
     # 2. Mix narration + original audio (if present)
-    if has_video_audio:
+    # no_original_audio=True strips the video's own audio track entirely
+    # so only the AI narration is heard (avoids overlap with original recording)
+    mix_original = has_video_audio and not no_original_audio
+    if mix_original:
         mix_inputs = "[0:a]" + "".join(delayed_labels)
         n_mix      = n + 1
     else:
@@ -335,7 +366,16 @@ def build_ffmpeg_command(
     # 3. Video caption strategy
     if srt_path and effective_mode == "libass":
         escaped = srt_path.replace("\\", "/").replace(":", "\\:")
-        filters.append(f"[0:v]subtitles=filename={escaped}[vout]")
+        # force_style overrides the default "Arial" to a CJK-capable font.
+        # "Noto Sans CJK SC" covers Chinese, Japanese, Korean glyphs.
+        # "Arial Unicode MS" is present on every macOS install as a fallback.
+        # If neither is installed, libass falls back to its next match — Chinese
+        # will still be missing glyphs, but Latin/Cyrillic/Arabic/Devanagari
+        # usually work out of the box.
+        style = "FontName=Noto Sans CJK SC,Fontsize=22,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=0"
+        # Escape commas inside force_style because libass uses ':' as separator
+        style_escaped = style.replace(",", "\\,")
+        filters.append(f"[0:v]subtitles=filename={escaped}:force_style='{style_escaped}'[vout]")
         video_map = "[vout]"
 
     elif srt_path and effective_mode == "drawtext":
@@ -396,6 +436,8 @@ def parse_args() -> argparse.Namespace:
         help="Volume multiplier for narration audio (default: 1.0).")
     parser.add_argument("--soft-subs", action="store_true",
         help="Attach captions as a soft (selectable) subtitle track instead of burning them in.")
+    parser.add_argument("--no-original-audio", action="store_true", dest="no_original_audio",
+        help="Strip the original video audio track. Output will have AI narration only. "             "Use this when the source video has its own audio that would overlap narration.")
     return parser.parse_args()
 
 
@@ -492,14 +534,15 @@ def main() -> None:
 
     # ── Build and run ffmpeg ─────────────────────────────────────────
     ffmpeg_cmd = build_ffmpeg_command(
-        video_path       = args.video,
-        audio_steps      = audio_steps,
-        srt_path         = srt_path,
-        output_path      = output_path,
-        narration_volume = args.narration_volume,
-        soft_subs        = args.soft_subs,
-        has_video_audio  = has_video_audio,
-        caption_mode     = caption_mode,
+        video_path        = args.video,
+        audio_steps       = audio_steps,
+        srt_path          = srt_path,
+        output_path       = output_path,
+        narration_volume  = args.narration_volume,
+        soft_subs         = args.soft_subs,
+        has_video_audio   = has_video_audio,
+        caption_mode      = caption_mode,
+        no_original_audio = args.no_original_audio,
     )
 
     print("\n🔧 ffmpeg command:")

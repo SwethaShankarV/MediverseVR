@@ -1,0 +1,10 @@
+usage: run_pipeline.py [-h] [--video VIDEO] [--events EVENTS]
+                       [--output OUTPUT] [--work-dir WORK_DIR]
+                       [--skip-narration] [--skip-tts] [--skip-srt]
+                       [--no-video] [--force] [--model MODEL]
+                       [--offload-folder OFFLOAD_FOLDER]
+                       [--max-new-tokens MAX_NEW_TOKENS]
+                       [--temperature TEMPERATURE]
+                       [--skip-hallucination-check] [--tts-model TTS_MODEL]
+                       [--tts-gpu] [--narration-volume 0.0-2.0] [--soft-subs]
+run_pipeline.py: error: unrecognized arguments: --no-original-audio

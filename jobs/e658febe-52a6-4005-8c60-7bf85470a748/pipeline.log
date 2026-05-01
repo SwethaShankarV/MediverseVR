@@ -1,0 +1,13 @@
+
+════════════════════════════════════════════════════════════
+  MediverseVR — Full Narration Pipeline
+════════════════════════════════════════════════════════════
+
+  Work dir:  /Users/swethashankar/Documents/OPT/MediverseVR/jobs/e658febe-52a6-4005-8c60-7bf85470a748
+  Events:    /Users/swethashankar/Documents/OPT/MediverseVR/jobs/e658febe-52a6-4005-8c60-7bf85470a748/surgery_events.json
+  Force:     no (skip steps whose output exists)
+
+  Pre-flight checks
+  ✔  All inputs present.
+
+  ✖  --skip-narration set but /Users/swethashankar/Documents/OPT/MediverseVR/jobs/e658febe-52a6-4005-8c60-7bf85470a748/final_mapped.json not found.

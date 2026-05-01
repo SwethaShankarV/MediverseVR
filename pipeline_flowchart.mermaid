@@ -1,0 +1,36 @@
+flowchart TD
+    A["🥽 VR Surgery Session\n(student performs surgery)"] --> B["JsonInteractionLogger.cs\nrecords every tool action"]
+    A --> C["Unity Video Recorder\ncaptures session as .mp4"]
+
+    B --> D["📄 CombinedToolLog.json\n{tool, action, target, timestamp}\nSaved to persistentDataPath"]
+    C --> E["🎬 demo_recording.mp4\nRaw surgery video\nSaved to MediverseVR folder"]
+
+    PRE["⏰ Morning of demo\n~22 min, pre-run"] --> F["🤖 BioMistral-7B\ngenerate_narration.py\nReads CombinedToolLog.json\nGenerates clinical sentences"]
+    D -.->|"fed to BioMistral\nday before / morning of demo"| PRE
+    F --> G["📄 final_mapped.json\n{sentence, start_time, end_time}\nPre-generated narration text"]
+
+    KEY["⌨️ Press G in Unity\n(or click Generate button)"] --> H
+
+    D -->|"uploaded to server"| H
+    G -->|"already on server\n--skip-narration"| H
+
+    H["🖥️ FastAPI Server\nlocalhost:8000\nrun_pipeline.py"] --> S1
+
+    S1["⏭️ Step 1 — SKIPPED\nBioMistral narration\nuses existing final_mapped.json"] --> S2
+    S2["🔊 Step 2 — Coqui TTS\ngenerate_step_audio.py\n~15 seconds\nGenerates WAV per sentence"] --> S3
+    S3["📝 Step 3 — SRT Generator\ngenerate_srt.py\n< 1 second\nCreates captions.srt"] --> S4
+
+    E -->|"input video"| S4
+    S4["🎬 Step 4 — ffmpeg Composer\ncompose_video.py\n~2 seconds\nStitches video + audio + subtitles"] --> OUT
+
+    OUT["✅ narrated_session.mp4\nVoice narration + subtitles\nover recorded surgery video\nSaved to persistentDataPath"]
+
+    OUT --> VR["📱 Downloaded to Unity\npersistentDataPath\nfinal_mapped.json + WAVs\n+ narrated_session.mp4"]
+
+    style PRE fill:#f0a500,color:#000
+    style KEY fill:#4a90d9,color:#fff
+    style OUT fill:#27ae60,color:#fff
+    style S1 fill:#95a5a6,color:#fff
+    style S2 fill:#2980b9,color:#fff
+    style S3 fill:#2980b9,color:#fff
+    style S4 fill:#2980b9,color:#fff

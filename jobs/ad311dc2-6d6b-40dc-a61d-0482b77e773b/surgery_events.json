@@ -1,0 +1,53 @@
+{
+  "data": [
+    {
+      "start_time": 0.0,
+      "end_time": 6.980000019073486,
+      "tool": "Scalpel",
+      "target": "clinic_table_2 (1)",
+      "action": "Scalpel_incise"
+    },
+    {
+      "start_time": 9.559999465942383,
+      "end_time": 14.279999732971192,
+      "tool": "Scalpel",
+      "target": "footskin",
+      "action": "Scalpel_incise"
+    },
+    {
+      "start_time": 19.920000076293947,
+      "end_time": 19.959999084472658,
+      "tool": "BoneSaw",
+      "target": "metararsal1",
+      "action": "BoneSaw_engage"
+    },
+    {
+      "start_time": 20.5,
+      "end_time": 20.53999900817871,
+      "tool": "BoneSaw",
+      "target": "metararsal1",
+      "action": "BoneSaw_engage"
+    },
+    {
+      "start_time": 27.19999885559082,
+      "end_time": 28.439998626708986,
+      "tool": "OscillatingSaw",
+      "target": "metararsal1",
+      "action": "ChevronCut_engage"
+    },
+    {
+      "start_time": 29.439998626708986,
+      "end_time": 29.85999870300293,
+      "tool": "OscillatingSaw",
+      "target": "metararsal1",
+      "action": "ChevronCut_engage"
+    },
+    {
+      "start_time": 35.21999740600586,
+      "end_time": 37.34000015258789,
+      "tool": "Drill",
+      "target": "metararsal1_RemainingPiece",
+      "action": "Drill_insert"
+    }
+  ]
+}

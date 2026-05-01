@@ -146,17 +146,27 @@ def job_dir(job_id: str) -> Path:
 
 # ── Background pipeline runner ────────────────────────────────────────────────
 
-def _run_pipeline(job_id: str, video_path: Path, events_path: Path) -> None:
+def _run_pipeline(
+    job_id: str,
+    video_path: Path,
+    events_path: Path,
+    skip_narration: bool = False,
+    skip_tts: bool = False,
+    vr_assets_only: bool = False,
+) -> None:
     """
     Called in a background thread. Invokes run_pipeline.py as a subprocess
     so that heavy imports (torch, transformers) don't block the API server.
+
+    vr_assets_only  — passes --no-video; job succeeds after Steps 1–3 so
+                      Unity can immediately download narration text + audio.
     """
-    jdir    = job_dir(job_id)
+    jdir     = job_dir(job_id)
     log_path = jdir / "pipeline.log"
 
-    # Derive output path
-    base        = video_path.stem
-    output_mp4  = jdir / f"narrated_{base}.mp4"
+    # Derive output path (only used when vr_assets_only=False)
+    base       = video_path.stem
+    output_mp4 = jdir / f"narrated_{base}.mp4"
 
     _update_job(job_id,
         status="running",
@@ -164,15 +174,73 @@ def _run_pipeline(job_id: str, video_path: Path, events_path: Path) -> None:
         message="Pipeline starting…",
     )
 
+    # ── Seed skip files into job dir ─────────────────────────────────────────
+    # run_pipeline.py requires that skipped-step outputs already exist IN the
+    # work dir (jdir). If the caller requests skipping but the file isn't there
+    # yet, copy it from the pipeline root as a fallback so the skip succeeds.
+
+    if skip_narration:
+        job_fm = jdir / "final_mapped.json"
+        if not job_fm.exists():
+            src_fm = HERE / "final_mapped.json"
+            if src_fm.exists():
+                shutil.copy(src_fm, job_fm)
+                print(f"[server] Seeded final_mapped.json from pipeline root into {jdir.name}")
+            else:
+                # Nothing to copy — let the pipeline fail with a clear error
+                print("[server] Warning: skip_narration=True but no final_mapped.json found.")
+
+    if skip_tts:
+        job_manifest = jdir / "audio_manifest.json"
+        if not job_manifest.exists():
+            src_manifest = HERE / "audio_manifest.json"
+            if src_manifest.exists():
+                shutil.copy(src_manifest, job_manifest)
+                # Also copy the WAV files
+                src_audio = HERE / "audio_steps"
+                dst_audio = jdir / "audio_steps"
+                if src_audio.exists():
+                    shutil.copytree(src_audio, dst_audio, dirs_exist_ok=True)
+                print(f"[server] Seeded audio_manifest.json + audio_steps/ from pipeline root.")
+
+    # ── Demo video fallback ──────────────────────────────────────────────────
+    # Unity sends a 0-byte placeholder when Upload Video is unticked.
+    # If that happens, substitute demo_recording.mp4 from the pipeline root
+    # so the video composition step (Step 4) still produces a real MP4.
+    if not vr_assets_only and video_path.stat().st_size == 0:
+        demo_video = HERE / "demo_recording.mp4"
+        if demo_video.exists():
+            real_video = jdir / "input_video.mp4"
+            shutil.copy(demo_video, real_video)
+            video_path = real_video
+            # Recalculate output path now that we know the stem
+            base       = video_path.stem
+            output_mp4 = jdir / f"narrated_{base}.mp4"
+            print(f"[server] No video uploaded — using demo_recording.mp4 as video source")
+        else:
+            print("[server] Warning: 0-byte video received and no demo_recording.mp4 found. "
+                  "Video composition will likely fail.")
+
     cmd = [
         PYTHON, str(PIPELINE_SCRIPT),
-        "--video",          str(video_path),
-        "--events",         str(events_path),
-        "--output",         str(output_mp4),
-        "--work-dir",       str(jdir),
-        # Skip narration + TTS if final_mapped.json and audio_manifest.json
-        # already exist in the job dir (unlikely on first run, useful for retries)
+        "--events",   str(events_path),
+        "--work-dir", str(jdir),
     ]
+
+    if vr_assets_only:
+        cmd.append("--no-video")
+    else:
+        cmd += ["--video", str(video_path), "--output", str(output_mp4)]
+
+    if skip_narration:
+        cmd.append("--skip-narration")
+    if skip_tts:
+        cmd.append("--skip-tts")
+
+    # Always strip original video audio — the demo_recording.mp4 has its own
+    # audio track which overlaps with the AI narration. Narration-only is cleaner.
+    if not vr_assets_only:
+        cmd.append("--no-original-audio")
 
     try:
         with open(log_path, "w") as log_f:
@@ -185,12 +253,36 @@ def _run_pipeline(job_id: str, video_path: Path, events_path: Path) -> None:
             )
             proc.wait()
 
-        if proc.returncode == 0 and output_mp4.exists():
+        # Success criteria:
+        #   vr_assets_only → Steps 1–3 produced final_mapped.json
+        #   normal         → Step 4 produced narrated MP4
+        vr_success    = vr_assets_only and (jdir / "final_mapped.json").exists()
+        video_success = (not vr_assets_only) and proc.returncode == 0 and output_mp4.exists()
+
+        if proc.returncode == 0 and (vr_success or video_success):
+            # Collect audio asset paths for Unity to download
+            audio_dir   = jdir / "audio_steps"
+            audio_files = sorted(f.name for f in audio_dir.glob("*.wav")) if audio_dir.exists() else []
+
+            done_msg = (
+                "VR narration assets ready. Open the Explanation panel to play."
+                if vr_assets_only else
+                "Pipeline finished. Video is ready to download."
+            )
+
             _update_job(job_id,
                 status="done",
                 step="complete",
-                message="Pipeline finished. Video is ready to download.",
-                output_file=str(output_mp4),
+                message=done_msg,
+                output_file=str(output_mp4) if video_success else None,
+                # Asset URLs for direct download by Unity
+                final_mapped_url=f"/assets/{job_id}/final_mapped.json"
+                    if (jdir / "final_mapped.json").exists() else None,
+                audio_manifest_url=f"/assets/{job_id}/audio_manifest.json"
+                    if (jdir / "audio_manifest.json").exists() else None,
+                audio_urls=[f"/assets/{job_id}/audio_steps/{f}" for f in audio_files],
+                srt_url=f"/assets/{job_id}/captions.srt"
+                    if (jdir / "captions.srt").exists() else None,
             )
 
             # ── Upload to Firebase (non-blocking, non-fatal) ───────────────
@@ -199,10 +291,9 @@ def _run_pipeline(job_id: str, video_path: Path, events_path: Path) -> None:
                     firebase_urls = _firebase_upload_job(job_id, jdir)
                     _update_job(job_id, firebase_urls=firebase_urls)
                     _update_job(job_id,
-                        message="Pipeline finished. Video ready to download and replay available on Firebase.")
+                        message=done_msg + " Replay also available on Firebase.")
                     print(f"[server] Firebase upload complete for job {job_id}")
                 except Exception as fb_err:
-                    # Firebase failure should never fail the whole job
                     print(f"[server] Firebase upload failed (non-fatal): {fb_err}")
             else:
                 print("[server] Firebase not configured — skipping upload. "
@@ -261,10 +352,11 @@ def health():
 @app.post("/process")
 async def process(
     background_tasks: BackgroundTasks,
-    video: UploadFile   = File(...,  description="Recorded VR session video (MP4/AVI/MOV)"),
+    video: UploadFile   = File(...,  description="Recorded VR session video (MP4/AVI/MOV). Send an empty file with a .mp4 name when vr_assets_only=true."),
     events: UploadFile  = File(...,  description="surgery_events.json from Unity"),
     skip_narration: bool = Form(False, description="Skip BioMistral (use existing final_mapped.json if present)"),
     skip_tts: bool       = Form(False, description="Skip Coqui TTS (use existing WAVs if present)"),
+    vr_assets_only: bool = Form(False, description="Only generate VR narration assets (Steps 1–3). Skips video composition. Use this from standalone Quest headsets."),
 ):
     """
     Upload a video + events file to start the narration pipeline.
@@ -312,23 +404,20 @@ async def process(
         shutil.rmtree(jdir, ignore_errors=True)
         raise HTTPException(status_code=400, detail=f"Invalid events JSON: {exc}")
 
-    # ── Build the pipeline command (with optional skip flags) ─────────
-    # We write a tiny wrapper script into the job dir so that
-    # skip_narration / skip_tts can be passed through cleanly.
-    run_cmd_path = jdir / "run.sh"
-    skip_flags   = []
-    if skip_narration:
-        skip_flags.append("--skip-narration")
-    if skip_tts:
-        skip_flags.append("--skip-tts")
-
     # ── Register and start job ────────────────────────────────────────
     _create_job(job_id, video.filename)
 
     # Run in a background thread so the API stays responsive
     thread = threading.Thread(
         target=_run_pipeline,
-        args=(job_id, video_path, events_path),
+        kwargs={
+            "job_id":         job_id,
+            "video_path":     video_path,
+            "events_path":    events_path,
+            "skip_narration": skip_narration,
+            "skip_tts":       skip_tts,
+            "vr_assets_only": vr_assets_only,
+        },
         daemon=True,
     )
     thread.start()
@@ -423,6 +512,41 @@ def delete_job(job_id: str):
         _jobs.pop(job_id, None)
 
     return {"message": f"Job '{job_id}' deleted."}
+
+
+@app.get("/assets/{job_id}/{file_path:path}")
+def get_asset(job_id: str, file_path: str):
+    """
+    Serve a specific output file from a job directory.
+
+    Used by NarrationPipelineTrigger.cs to download individual assets:
+      /assets/{job_id}/final_mapped.json
+      /assets/{job_id}/audio_manifest.json
+      /assets/{job_id}/audio_steps/step_0000_<name>.wav
+      /assets/{job_id}/captions.srt
+
+    Returns 404 if the job or file does not exist.
+    """
+    jdir_path  = job_dir(job_id).resolve()
+    asset_path = (jdir_path / file_path).resolve()
+
+    # Security: prevent path traversal outside the job directory
+    if not str(asset_path).startswith(str(jdir_path)):
+        raise HTTPException(status_code=403, detail="Access denied.")
+
+    if not asset_path.exists():
+        raise HTTPException(status_code=404, detail=f"Asset not found: {file_path}")
+
+    # Pick a sensible media type
+    suffix = asset_path.suffix.lower()
+    media_type = {
+        ".json": "application/json",
+        ".wav":  "audio/wav",
+        ".srt":  "text/plain",
+        ".mp4":  "video/mp4",
+    }.get(suffix, "application/octet-stream")
+
+    return FileResponse(str(asset_path), media_type=media_type)
 
 
 @app.get("/replays")

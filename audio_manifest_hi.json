@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "generated_at_utc": "2026-05-01T11:55:56.545714+00:00",
+  "provider": "coqui",
+  "input_json": "final_mapped_hi.json",
+  "input_normalization": "passthrough",
+  "expected_audio_clips": 3,
+  "audio_dir": "audio_steps_hi",
+  "language": "hi",
+  "batching": {
+    "mode": "sequential",
+    "note": "Local Coqui runs sequentially to limit RAM/CPU thrash; one clip per step."
+  },
+  "future_enhancements": [
+    "Optional medical pronunciation pass (custom lexicon / SSML / post-edit)",
+    "Optional upload step: sync audio_dir to object storage and add audio_url"
+  ],
+  "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+  "speaker": "Ana Florence",
+  "steps": [
+    {
+      "step_index": 0,
+      "step_id": "step_0000",
+      "text_field": "sentence",
+      "text": "रोगी ने मेटाटार्सल स्थिति के उपचार के लिए शल्य चिकित्सा प्रक्रिया करवाई।",
+      "content_hash": "2b435697ff511dced06cb0add2006ce2c41b38cac46be25dd17d082e6c8e1432",
+      "audio_path": "audio_steps_hi/step_0000_2b435697ff511dce.wav",
+      "reused_cached_audio": false,
+      "tts_settings": {
+        "provider": "coqui",
+        "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+        "speaker": "Ana Florence",
+        "language": "hi",
+        "gpu": false,
+        "split_sentences": false
+      },
+      "channels": 1,
+      "sample_rate": 24000,
+      "duration_seconds": 6.166,
+      "mono": true,
+      "source_times": {
+        "start_time": 9.559999465942383,
+        "end_time": 14.279999732971191,
+        "timestamp": 9.559999465942383
+      }
+    },
+    {
+      "step_index": 1,
+      "step_id": "step_0001",
+      "text_field": "sentence",
+      "text": "पैर की त्वचा पर चीरा लगाने के लिए स्कैल्पेल का उपयोग किया गया, फिर पहले मेटाटार्सल पर बोन सॉ और ऑस्सीलेटिंग सॉ से ऑस्टियोटमी की गई।",
+      "content_hash": "0aee015fa29fd7b85fc3528e94b2178973ab796d16a16995cea8c0b441f4c19d",
+      "audio_path": "audio_steps_hi/step_0001_0aee015fa29fd7b8.wav",
+      "reused_cached_audio": false,
+      "tts_settings": {
+        "provider": "coqui",
+        "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+        "speaker": "Ana Florence",
+        "language": "hi",
+        "gpu": false,
+        "split_sentences": false
+      },
+      "channels": 1,
+      "sample_rate": 24000,
+      "duration_seconds": 9.515333,
+      "mono": true,
+      "source_times": {
+        "start_time": 19.920000076293945,
+        "end_time": 20.53999900817871,
+        "timestamp": 19.920000076293945
+      }
+    },
+    {
+      "step_index": 2,
+      "step_id": "step_0002",
+      "text_field": "sentence",
+      "text": "पहले मेटाटार्सल पर फिर एक ड्रिलिंग प्रक्रिया की गई।",
+      "content_hash": "451620b53a86980b5edb02a0b42ba40fa7d09a1cd1338e8214e9173b9d425e3b",
+      "audio_path": "audio_steps_hi/step_0002_451620b53a86980b.wav",
+      "reused_cached_audio": false,
+      "tts_settings": {
+        "provider": "coqui",
+        "model_name": "tts_models/multilingual/multi-dataset/xtts_v2",
+        "speaker": "Ana Florence",
+        "language": "hi",
+        "gpu": false,
+        "split_sentences": false
+      },
+      "channels": 1,
+      "sample_rate": 24000,
+      "duration_seconds": 5.099333,
+      "mono": true,
+      "source_times": {
+        "start_time": 27.19999885559082,
+        "end_time": 29.85999870300293,
+        "timestamp": 27.19999885559082
+      }
+    }
+  ]
+}
