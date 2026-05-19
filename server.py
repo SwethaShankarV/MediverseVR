@@ -79,6 +79,15 @@ from fastapi import (
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
+# Load .env so env vars (Supabase, etc.) are visible to the server process.
+# python-dotenv is optional — if it's not installed, env vars must be set
+# in the shell before launching the server.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Firebase uploader — optional; gracefully skipped when not configured
 try:
     from firebase_uploader import firebase_configured, upload_job as _firebase_upload_job
@@ -86,6 +95,26 @@ try:
 except ImportError:
     _FIREBASE_AVAILABLE = False
     def firebase_configured(): return False  # type: ignore[misc]
+
+# Supabase uploader — optional; gracefully skipped when credentials aren't set
+try:
+    from supabase_uploader import upload_job as _supabase_upload_job
+    _SUPABASE_AVAILABLE = True
+except ImportError:
+    _SUPABASE_AVAILABLE = False
+
+
+def _supabase_configured() -> bool:
+    """Supabase is considered enabled if URL + any usable key is in the env."""
+    if not _SUPABASE_AVAILABLE:
+        return False
+    if not os.environ.get("SUPABASE_URL"):
+        return False
+    return any(os.environ.get(k) for k in (
+        "SUPABASE_SECRET_KEY",
+        "SUPABASE_SERVICE_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+    ))
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 
@@ -298,6 +327,32 @@ def _run_pipeline(
             else:
                 print("[server] Firebase not configured — skipping upload. "
                       "Set env vars from .env.example to enable.")
+
+            # ── Upload to Supabase (non-blocking, non-fatal) ───────────────
+            # Storage + replays table row. Same pattern as Firebase — if
+            # anything goes wrong, the local pipeline still succeeds.
+            if _supabase_configured():
+                try:
+                    sb_result = _supabase_upload_job(
+                        job_dir  = jdir,
+                        language = "en",     # TODO: pipe through from /process when we add a language picker
+                        title    = f"Surgery session {job_id[:8]}",
+                    )
+                    _update_job(job_id,
+                        supabase_row_id  = sb_result.get("id"),
+                        supabase_urls    = {
+                            k: v for k, v in sb_result.items() if k != "id"
+                        },
+                        message = done_msg + " Replay also uploaded to Supabase.",
+                    )
+                    print(f"[server] Supabase upload complete for job {job_id} "
+                          f"(row id: {sb_result.get('id')})")
+                except Exception as sb_err:
+                    print(f"[server] Supabase upload failed (non-fatal): {sb_err}")
+            else:
+                print("[server] Supabase not configured — skipping upload. "
+                      "Set SUPABASE_URL + SUPABASE_SERVICE_KEY in .env to enable.")
+
         else:
             # Read the last 20 lines of the log for the error message
             try:

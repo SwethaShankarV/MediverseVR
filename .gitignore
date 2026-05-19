@@ -46,3 +46,7 @@ Assets/AddressableAssetsData/*/buildlog*.txt
 
 # JetBrains Rider plugin for Unity
 Assets/Plugins/Editor/JetBrains*
+.env
+
+# Generated job outputs (videos, audio, manifests)
+jobs/
