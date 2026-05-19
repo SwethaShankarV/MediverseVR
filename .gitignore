@@ -50,3 +50,4 @@ Assets/Plugins/Editor/JetBrains*
 
 # Generated job outputs (videos, audio, manifests)
 jobs/
+!.env.example
