@@ -51,3 +51,8 @@ Assets/Plugins/Editor/JetBrains*
 # Generated job outputs (videos, audio, manifests)
 jobs/
 !.env.example
+
+# Local-only handoff artifacts (kept in Google Drive instead)
+*.docx
+*.mov
+Supabase*.png
